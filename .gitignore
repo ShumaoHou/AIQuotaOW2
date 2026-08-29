@@ -1,0 +1,18 @@
+# Build outputs
+*.iml
+.gradle/
+build/
+*/build/
+.externalNativeBuild/
+.cxx/
+local.properties
+captures/
+release/
+
+# API keys (never commit real keys)
+aibalance_keys.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
