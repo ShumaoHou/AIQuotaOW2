@@ -140,6 +140,21 @@ AIQuotaOW2/
 └── gradle.properties
 ```
 
+## 自动发布（GitHub Actions）
+
+push 一个 `v*` 格式的 tag（如 `v1.0.1`）即自动构建**签名** Release APK 并创建 GitHub Release。
+
+需先在仓库 **Settings → Secrets and variables → Actions** 配置以下仓库密钥：
+
+| Secret | 说明 |
+|--------|------|
+| `KEYSTORE_BASE64` | 本地 `keystore.jks` 的 Base64（单行），生成：`base64 -w0 keystore.jks` |
+| `KEYSTORE_PASSWORD` | keystore 密码 |
+| `KEY_ALIAS` | 密钥别名（本项目为 `aiQuotaOW2`） |
+| `KEY_PASSWORD` | 密钥密码 |
+
+工作流文件见 `.github/workflows/release.yml`。
+
 ## 安全说明
 
 - 所有请求均为 HTTPS，API Key 仅通过 `Authorization: Bearer` 头发送给 DeepSeek 官方域名；
