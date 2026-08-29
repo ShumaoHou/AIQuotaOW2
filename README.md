@@ -63,7 +63,7 @@
 2. `File → Open` 选择本项目目录 `AIQuotaOW2`，等待 Gradle Sync 完成
    （首次会自动下载 Gradle 7.6.3 与 AGP 7.4.2，并生成 Gradle Wrapper）。
 3. `Build → Build App Bundle(s)/APK(s) → Build APK(s)`，
-   产物位于 `app/build/outputs/apk/debug/app-debug.apk`。
+   产物位于 `app/build/outputs/apk/debug/`，文件名形如 `AIQuotaOW2-v1.0-debug.apk`（项目名-版本号-构建类型）。
 
 ### 方式二：命令行（需本地已装 Gradle 7.6.3）
 
@@ -78,7 +78,7 @@ gradle wrapper --gradle-version 7.6.3
 ./gradlew assembleDebug
 ```
 
-产物同样位于 `app/build/outputs/apk/debug/app-debug.apk`。
+产物同样位于 `app/build/outputs/apk/debug/`，文件名形如 `AIQuotaOW2-v1.0-debug.apk`（项目名-版本号-构建类型）。
 
 ## 安装到 OPPO Watch 2
 
@@ -98,7 +98,7 @@ gradle wrapper --gradle-version 7.6.3
 3. **安装 APK**：
 
    ```bash
-   adb install -r app/build/outputs/apk/debug/app-debug.apk
+   adb install -r app/build/outputs/apk/release/AIQuotaOW2-v1.0-release.apk
    ```
 
 4. 在手表应用列表中找到「**AI额度**」，点开即可看到 DeepSeek 余额。

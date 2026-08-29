@@ -42,4 +42,11 @@ android {
             signingConfig signingConfigs.release
         }
     }
+
+    // 产物按「项目名-版本号-构建类型」命名，例如 AIQuotaOW2-v1.0-release.apk
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "${rootProject.name}-v${variant.versionName}-${variant.buildType.name}.apk"
+        }
+    }
 }
