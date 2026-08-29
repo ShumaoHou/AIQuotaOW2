@@ -12,6 +12,10 @@ release/
 # API keys (never commit real keys)
 aibalance_keys.json
 
+# Signing keystore (never commit)
+keystore.jks
+keystore.properties
+
 # OS / editor
 .DS_Store
 Thumbs.db
