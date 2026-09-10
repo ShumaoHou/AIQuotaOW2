@@ -33,12 +33,30 @@
 
 在电脑上写一个 JSON 文件，把 Key 放进去，再 `adb push` 到手表即可，全程不用在手表上打字。
 
-1. 电脑上创建 `aibalance_keys.json`：
+1. 电脑上创建 `aibalance_keys.json`。三种写法任选一种（把 `sk-你的DeepSeekKey` 换成自己的 Key）：
 
-   ```json
+   一键生成（推荐，粘一次即可）：
+
+   ```bash
+   cat > aibalance_keys.json <<'EOF'
    {
      "deepseek": "sk-你的DeepSeekKey"
    }
+   EOF
+   ```
+
+   或者用环境变量注入 Key（避免 Key 进入 shell history）：
+
+   ```bash
+   export DS_KEY=sk-你的DeepSeekKey
+   printf '{\n  "deepseek": "%s"\n}\n' "$DS_KEY" > aibalance_keys.json
+   unset DS_KEY
+   ```
+
+   或者一行式（macOS / Linux 均适用，需要 `jq`）：
+
+   ```bash
+   jq -n --arg k "sk-你的DeepSeekKey" '{deepseek:$k}' > aibalance_keys.json
    ```
 
 2. 推送到手表（**推荐用 App 私有目录，无需任何权限**）：
