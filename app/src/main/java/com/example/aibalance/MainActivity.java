@@ -4,8 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,7 +25,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,9 +38,16 @@ public class MainActivity extends Activity {
     private static final int COLOR_OK = Color.parseColor("#4ADE80");
     private static final int COLOR_ERR = Color.parseColor("#F87171");
     private static final int COLOR_LOADING = Color.parseColor("#FACC15");
+    private static final int COLOR_BG_PEAK = Color.parseColor("#FB9D9D");
+    private static final int COLOR_BG_OFFPEAK = Color.parseColor("#2E7D32");
+    private static final TimeZone BJ = TimeZone.getTimeZone("Asia/Shanghai");
 
     private SharedPreferences prefs;
     private ExecutorService executor;
+    private Handler handler;
+    private Runnable ticker;
+    private TextView clock;
+    private Boolean lastPeak;
     private final List<Provider> providers = new ArrayList<>();
     private final List<CardHolder> holders = new ArrayList<>();
 
@@ -51,10 +66,11 @@ public class MainActivity extends Activity {
         // 启动时自动从文件读取 Key（零输入，无需在手表上打字）
         int loaded = loadKeysFromFile();
         if (loaded > 0) {
-            Toast.makeText(this, "已从文件载入 " + loaded + " 个 Key", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "已载入", Toast.LENGTH_SHORT).show();
         }
 
         LinearLayout container = findViewById(R.id.container);
+        clock = findViewById(R.id.tvClock);
         LayoutInflater inflater = LayoutInflater.from(this);
         for (Provider p : providers) {
             View card = inflater.inflate(R.layout.item_provider, container, false);
@@ -65,6 +81,25 @@ public class MainActivity extends Activity {
         }
 
         refreshAll();
+        updatePeakStatus();
+        startClockTicker();
+    }
+
+    /**
+     * 前台时每秒刷新一次时钟：用 SystemClock.elapsedRealtime 对齐到整秒，避免累积漂移。
+     */
+    private void startClockTicker() {
+        if (handler == null) handler = new Handler(Looper.getMainLooper());
+        ticker = new Runnable() {
+            @Override
+            public void run() {
+                if (isFinishing()) return;
+                updatePeakStatus();
+                long delay = 1000 - (SystemClock.elapsedRealtime() % 1000);
+                handler.postDelayed(this, delay);
+            }
+        };
+        handler.post(ticker);
     }
 
     /**
@@ -158,13 +193,51 @@ public class MainActivity extends Activity {
                 h.btnRefresh.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
                 h.btnRefresh.setText("刷新");
                 h.btnRefresh.setEnabled(true);
+                updatePeakStatus();
+                Toast.makeText(this, r.ok ? "刷新成功" : "刷新失败", Toast.LENGTH_SHORT).show();
             });
         });
+    }
+
+    /**
+     * 展示 DeepSeek 当前计费时段与北京时间。
+     * <p>
+     * 定价规则（https://api-docs.deepseek.com/zh-cn/quick_start/pricing/）：
+     * 高峰时段为北京时间周一至周五 09:00-12:00、14:00-18:00，其余为空闲时段。
+     * 必须用显式的 Asia/Shanghai 时区计算，不能依赖手表本地时区。
+     */
+    private void updatePeakStatus() {
+        if (clock == null || holders.isEmpty()) return;
+        CardHolder h = holders.get(0);
+
+        Calendar cal = new GregorianCalendar(BJ);
+        int dow = cal.get(Calendar.DAY_OF_WEEK);
+        boolean weekday = dow >= Calendar.MONDAY && dow <= Calendar.FRIDAY;
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        int minute = cal.get(Calendar.MINUTE);
+        int second = cal.get(Calendar.SECOND);
+        int minutes = hour * 60 + minute;
+
+        boolean peak = weekday
+                && ((minutes >= 9 * 60 && minutes < 12 * 60)
+                || (minutes >= 14 * 60 && minutes < 18 * 60));
+
+        clock.setText(String.format(Locale.US, "%02d:%02d:%02d", hour, minute, second));
+
+        if (lastPeak == null || lastPeak != peak) {
+            lastPeak = peak;
+            h.tag.setText(peak ? "梁文峰" : "梁文谷");
+            GradientDrawable bg = new GradientDrawable();
+            bg.setColor(peak ? COLOR_BG_PEAK : COLOR_BG_OFFPEAK);
+            bg.setCornerRadius(getResources().getDisplayMetrics().density * 12f);
+            h.tag.setBackground(bg);
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (handler != null && ticker != null) handler.removeCallbacks(ticker);
         if (executor != null) executor.shutdownNow();
     }
 
@@ -172,6 +245,7 @@ public class MainActivity extends Activity {
         final Provider provider;
         final TextView name;
         final TextView balance;
+        final TextView tag;
         final Button btnRefresh;
         final ImageView icon;
 
@@ -179,6 +253,7 @@ public class MainActivity extends Activity {
             this.provider = provider;
             this.name = card.findViewById(R.id.tvName);
             this.balance = card.findViewById(R.id.tvBalance);
+            this.tag = card.findViewById(R.id.tvTag);
             this.btnRefresh = card.findViewById(R.id.btnRefresh);
             this.icon = card.findViewById(R.id.ivIcon);
         }

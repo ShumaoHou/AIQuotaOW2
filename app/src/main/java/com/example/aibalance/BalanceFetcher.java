@@ -96,7 +96,7 @@ public class BalanceFetcher {
                     sb.append(symbol + total);
                     sb.append("\n");
                     int start = sb.length();
-                    sb.append("充值 " + symbol + toppedUp + " · 赠送 " + symbol + granted);
+                    sb.append("充值 " + symbol + toppedUp + "\n赠送 " + symbol + granted);
                     sb.setSpan(new RelativeSizeSpan(0.7f), start, sb.length(),
                             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                     sb.setSpan(new ForegroundColorSpan(Color.parseColor("#60A5FA")), start, sb.length(),
